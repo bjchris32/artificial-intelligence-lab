@@ -167,67 +167,43 @@ def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
     
     current_alpha = alpha # 3
     current_beta = beta # inf
-    if side == True:
-        # current move is balck, choose minimum, can only update beta
-        moves = [ move for move in generateMoves(side, board, flags) ]
-        # iterate the moves to find the minimum
-        move_dic = {}
-        minimum_move = None
-        minimum_move_list = None
-        for move in moves:
-            temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-            child_beta, child_move_list, child_move_tree = alphabeta(temp_side, temp_board, temp_flags, depth - 1, alpha=current_alpha, beta=current_beta)
-            move_dic[encode(*move)] = child_move_tree
-            # print("depth at minimum = ", depth, "child_beta = ", child_beta, ", current_beta=", current_beta, ", current_alpha=", current_alpha, ", iterate at encode(*move) = ", encode(*move))
-
-            if child_beta < current_beta:
-                # move to the child
-                current_beta = child_beta
-                minimum_move = move
-                minimum_move_list = child_move_list
-                
-            if current_beta <= current_alpha:
-                # prune
-                # print("prune in depth = ", depth, ", after the move at ", encode(*move))
-                return child_beta, child_move_list, move_dic
-                # return child_beta, [], move_dic
-
-        return_list = []
-        if minimum_move is not None:
-            return_list.append(minimum_move)
-        if minimum_move_list is not None and len(minimum_move_list) != 0:
-            flatten_minimum_move_list = [val for val in minimum_move_list]
-            return_list = return_list + (flatten_minimum_move_list)
-        return current_beta, return_list, move_dic
-
+    # current move is balck, choose minimum, can only update beta
     moves = [ move for move in generateMoves(side, board, flags) ]
-    # iterate the moves to find the maximum, can only update alpha
+    # iterate the moves to find the minimum
     move_dic = {}
-    maximum_move = None
-    maximum_move_list = None
+    best_move = None
+    best_move_list = None
     for move in moves:
-        # print("depth at maximum = ", depth, ", current_beta=", current_beta, ", current_alpha=", current_alpha, ", iterate at encode(*move) = ", encode(*move))
         temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-        child_alpha, child_move_list, child_move_tree = alphabeta(temp_side, temp_board, temp_flags, depth - 1, alpha=current_alpha, beta=current_beta)
+        best_value, child_move_list, child_move_tree = alphabeta(temp_side, temp_board, temp_flags, depth - 1, alpha=current_alpha, beta=current_beta)
         move_dic[encode(*move)] = child_move_tree
+        # print("depth at minimum = ", depth, "best_value = ", best_value, ", current_beta=", current_beta, ", current_alpha=", current_alpha, ", iterate at encode(*move) = ", encode(*move))
 
-        if child_alpha > current_alpha:
+        if side == True and best_value < current_beta:
+            # move to the child
+            current_beta = best_value
+            best_move = move
+            best_move_list = child_move_list
+
+        if side == False and best_value > current_alpha:
             # take child move
-            maximum_move = move
-            maximum_move_list = child_move_list
-            current_alpha = child_alpha
+            current_alpha = best_value
+            best_move = move
+            best_move_list = child_move_list
+
         if current_beta <= current_alpha:
             # prune
-            return child_alpha, child_move_list, move_dic
+            return best_value, child_move_list, move_dic
 
     return_list = []
-    if maximum_move is not None:
-        return_list.append(maximum_move)
-    if maximum_move_list is not None and len(maximum_move_list) != 0:
-        flatten_maximum_move_list = [val for val in maximum_move_list]
-        return_list = return_list + (flatten_maximum_move_list)
+    if best_move is not None:
+        return_list.append(best_move)
+    if best_move_list is not None and len(best_move_list) != 0:
+        flatten_best_move_list = [val for val in best_move_list]
+        return_list = return_list + (flatten_best_move_list)
 
-    return current_alpha, return_list, move_dic
+    evaluation = current_beta if (side == True) else current_alpha
+    return evaluation, return_list, move_dic
     
 
 def stochastic(side, board, flags, depth, breadth, chooser):
