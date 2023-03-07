@@ -44,28 +44,6 @@ def random(side, board, flags, chooser):
 # Stuff you need to write:
 # Move-generating functions using minimax, alphabeta, and stochastic search.
 
-# def find_max(moves, side, board, flags):
-#     print("find max")
-#     maximum_value = float('-inf')
-#     for move in moves:
-#         temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-#         value = evaluate(newboard)
-#         if value > maximum_value:
-#             maximum_value = value
-#             newside, newboard, newflags = temp_side, temp_board, temp_flags
-#     return newside, newboard, newflags
-
-# def find_min(moves, side, board, flags):
-#     print("find min")
-#     minimum_value = float('inf')
-#     for move in moves:
-#         temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-#         value = evaluate(newboard)
-#         if value < minimum_value:
-#             minimum_value = value
-#             newside, newboard, newflags = temp_side, temp_board, temp_flags
-#     return newside, newboard, newflags
-
 def minimax(side, board, flags, depth):
     '''
     Return a minimax-optimal move sequence, tree of all boards evaluated, and value of best path.
@@ -104,50 +82,39 @@ def minimax(side, board, flags, depth):
     if depth == 0:
         return evaluate(board), [], {}
 
-    if side == True:
-        # current move is balck, choose minimum
-        moves = [ move for move in generateMoves(side, board, flags) ]
-        # iterate the moves to find the minimum
-        move_dic = {}
-        minimum_value = float('inf')
-        for move in moves:
-            temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
-            parent_value, parent_move_list, parent_move_tree = minimax(temp_side, temp_board, temp_flags, depth - 1)
-            move_dic[encode(*move)] = parent_move_tree
-
-            if parent_value < minimum_value:
-                minimum_move = move
-                minimum_move_list = parent_move_list
-                minimum_value = parent_value
-
-        return_list = []
-        return_list.append(minimum_move)
-        if len(minimum_move_list) != 0:
-            flatten_minimum_move_list = [val for val in minimum_move_list]
-            return_list = return_list + (flatten_minimum_move_list)
-        return minimum_value, return_list, move_dic
-
     moves = [ move for move in generateMoves(side, board, flags) ]
-    # iterate the moves to find the maximum
-    maximum_value = float('-inf')
+    # iterate the moves to find the minimum
     move_dic = {}
+    best_minimum_value = float('inf')
+    best_maximum_value = float('-inf')
+
+    best_move = None
+    best_move_list = None
     for move in moves:
         temp_side, temp_board, temp_flags = makeMove(side, board, move[0], move[1], flags, move[2])
         parent_value, parent_move_list, parent_move_tree = minimax(temp_side, temp_board, temp_flags, depth - 1)
         move_dic[encode(*move)] = parent_move_tree
-        if parent_value > maximum_value:
-            maximum_move = move
-            maximum_move_list = parent_move_list
-            maximum_value = parent_value
+
+        # current move is balck, choose minimum
+        if side == True and parent_value < best_minimum_value:
+            best_minimum_value = parent_value
+            best_move = move
+            best_move_list = parent_move_list
+        # current move is white, choose maximum
+        if side == False and parent_value > best_maximum_value:
+            best_maximum_value = parent_value
+            best_move = move
+            best_move_list = parent_move_list
 
     return_list = []
-    return_list.append(maximum_move)
-    if len(maximum_move_list) != 0:
-        flatten_maximum_move_list = [val for val in maximum_move_list]
-        return_list = return_list + (flatten_maximum_move_list)
+    if best_move is not None:
+        return_list.append(best_move)
+    if best_move_list is not None and len(best_move_list) != 0:
+        flatten_best_move_list = [val for val in best_move_list]
+        return_list = return_list + (flatten_best_move_list)
 
-    return maximum_value, return_list, move_dic
-
+    evaluation = best_minimum_value if (side == True) else best_maximum_value
+    return evaluation, return_list, move_dic
 
 def alphabeta(side, board, flags, depth, alpha=-math.inf, beta=math.inf):
     '''
