@@ -73,9 +73,9 @@ class grading_tests(unittest.TestCase):
     @weight(7)
     def test_minimax02(self):
         general_test(self, load_game(0), 'minimax_game%d_depth%d'%(0,2), submitted.minimax, 2)
-    # @weight(7)
-    # def test_alphabeta02(self):
-    #     general_test(self, load_game(0), 'alphabeta_game%d_depth%d'%(0,2), submitted.alphabeta, 2)
+    @weight(7)
+    def test_alphabeta02(self):
+        general_test(self, load_game(0), 'alphabeta_game%d_depth%d'%(0,2), submitted.alphabeta, 2)
 
     @weight(7)
     def test_minimax11(self):
@@ -83,10 +83,10 @@ class grading_tests(unittest.TestCase):
     @weight(7)
     def test_minimax12(self):
         general_test(self, load_game(1), 'minimax_game%d_depth%d'%(1,2), submitted.minimax, 2)
-    # @weight(7)
-    # def test_alphabeta12(self):
-    #     general_test(self, load_game(1), 'alphabeta_game%d_depth%d'%(1,2), submitted.alphabeta, 2)
-    # @weight(7)
-    # def test_alphabeta13(self):
-    #     general_test(self, load_game(1), 'alphabeta_game%d_depth%d'%(1,3), submitted.alphabeta, 3)
+    @weight(7)
+    def test_alphabeta12(self):
+        general_test(self, load_game(1), 'alphabeta_game%d_depth%d'%(1,2), submitted.alphabeta, 2)
+    @weight(7)
+    def test_alphabeta13(self):
+        general_test(self, load_game(1), 'alphabeta_game%d_depth%d'%(1,3), submitted.alphabeta, 3)
         
