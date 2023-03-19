@@ -48,6 +48,7 @@ def standardize_variables(nonstandard_rules):
         antecedents_replaced = antecedents
         consequent_replaced = consequent
         if len(antecedents) > 0 or len(consequent) > 0:
+            # TODO: flatten the array to check
             if something_in_list_of_list(antecedents) or something_in_list(consequent):
                 var_counter += 1
                 temp_var = var_prefix + str(var_counter)
@@ -125,7 +126,37 @@ def unify(query, datum, variables):
     unify([...,True],[...,False],[...]) should always return None, None, regardless of the 
       rest of the contents of the query or datum.
     '''
-    raise RuntimeError("You need to write this part!")
+    unification = None
+    subs = None
+    query_bool = query[-1]
+    datum_bool = datum[-1]
+    if query_bool != datum_bool:
+        return unification, subs
+
+
+    subs = {}
+    unification = copy.deepcopy(query)
+    datum_copy = copy.deepcopy(datum)
+
+    i = 0
+    while(i < len(unification)):
+        if unification[i] in variables:
+            subs[unification[i]] = datum_copy[i]
+            # replace query with sub
+            replacing_indexes = [k for k in range(len(unification)) if unification[k] == unification[i]]
+            replace_var = subs[unification[i]]
+            for k in replacing_indexes:
+                unification[k] = replace_var
+
+        elif datum_copy[i] in variables:
+            subs[datum_copy[i]] = unification[i]
+            # replace query with sub
+            replacing_indexes = [k for k in range(len(unification)) if unification[k] == datum_copy[i]]
+            replace_var = subs[datum_copy[i]]
+            for k in replacing_indexes:
+                unification[k] = replace_var
+        i += 1
+
     return unification, subs
 
 def apply(rule, goals, variables):
