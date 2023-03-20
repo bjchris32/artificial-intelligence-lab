@@ -32,6 +32,25 @@ def get_recursive_value(dic, key):
     else:
         return None
 
+# the consequent of a rule that has an empty antecedents list
+def goal_set_all_true(rules, goal_set):
+    # print("goal_set_all_true")
+    # print("goal_set_all_true -------- rules = ", rules)
+    # print("goal_set_all_true -------- goal_set = ", goal_set)
+    goal_set_truth = [False * len(goal_set)]
+    for idx, goal in enumerate(goal_set):
+        for rule in rules:
+            if goal == rule['consequent']:
+                # check antecedents are empty
+                antecedents_all_empty = True
+                for antecedent in rule['antecedents']:
+                    if antecedent != []:
+                        antecedents_all_empty = False
+                if antecedents_all_empty:
+                    goal_set_truth[idx] = True
+    # print("goal_set_truth = ", goal_set_truth)
+    return all(goal_set_truth)
+
 def standardize_variables(nonstandard_rules):
     '''
     @param nonstandard_rules (dict) - dict from ruleIDs to rules
@@ -284,5 +303,66 @@ def backward_chain(query, rules, variables):
       that, when read in sequence, conclude by proving the truth of the query.
       If no proof of the query was found, you should return proof=None.
     '''
-    raise RuntimeError("You need to write this part!")
+    # raise RuntimeError("You need to write this part!")
+    proof = []
+
+    # print("query = ", query)
+    # print("rules = ", rules)
+    # print("variables = ", variables)
+
+    # The starting state is the statement that you are trying to prove.
+    # Every action is a rule application. The result of an action is to create a new goalset.
+    # Every state is a goalset. A goalset is a list of propositions called "goals" such that, if every goal is proven true, then that constitutes a proof of the statement you are trying to prove.
+    # The ending state is an empty goalset. The ending state is achieved by transforming the starting state into a list of goals such that every goal in that list is a known true proposition,
+    #  i.e., the consequent of a rule that has an empty antecedents list.
+
+    # Slide explaination:
+    # starting state: goal set
+    # actions: possible set of rules
+    # neighboring states: if Q unifies with Q' in goal set
+      # replace Q' with the unified antecedents
+    # terminate the goal set contains only truth
+
+    # functions defined:
+    # unify(query, datum, variables)
+    # return unification, subs
+
+    # apply(rule, goals, variables)
+    # return applications, goalsets
+    proof = None
+
+    queue = []
+    queue.append([rules.values(), [query]])
+    # BFS: iterate rules and try to unify the rule to generate new goal set
+      # check if the goal set contains only truth.
+      # i.e. the consequent of a rule that has an empty antecedents list.
+    while queue:
+        current_rules, current_goal_set = queue.pop(0)
+        # print("######### current_rules = ", current_rules)
+        # print("######### current_goal_set = ", current_goal_set)
+        
+        # Q: How to terminate the search?
+        # Sol1: Check antecedent or consequent?
+        # Sol2: empty goal set?
+        # check if every goal in current_goal_set is a known true proposition
+        # (the consequent of a rule that has an empty antecedents list)
+        if len(current_goal_set) == 1 and len(current_goal_set[0]) == 0:
+            return True
+        # Is it necessary?
+        # if goal_set_all_true(current_rules, current_goal_set):
+        #     return True
+
+        # get all neighbors with current_goal_set 
+        for rule in current_rules:
+            # print("rule = ",  rule)
+            applications, goalsets = apply(rule, current_goal_set, variables)
+            # Q: What should be pushed intto queue? goalsets or applications?
+            # -> Both
+            # print("applications = ", applications, "goalsets = ", goalsets)
+            # if len(goalsets) == 1 and len(goalsets[0]) == 0:
+            #     continue
+            queue.append([applications, goalsets])
+            # print("queue == ", queue)
+            # break
+        # print("queue == ", queue)
     return proof
