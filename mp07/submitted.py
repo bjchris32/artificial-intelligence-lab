@@ -19,6 +19,19 @@ def something_in_list_of_list(list_of_list):
             return True
     return False
 
+def get_recursive_value(dic, key):
+    # print("dic = ", dic)
+    # print("key = ", key)
+    if key in dic:
+        temp_value = dic[key]
+        recursive_value = get_recursive_value(dic, temp_value)
+        if recursive_value == None:
+            return temp_value
+        else:
+            return recursive_value
+    else:
+        return None
+
 def standardize_variables(nonstandard_rules):
     '''
     @param nonstandard_rules (dict) - dict from ruleIDs to rules
@@ -133,7 +146,6 @@ def unify(query, datum, variables):
     if query_bool != datum_bool:
         return unification, subs
 
-
     subs = {}
     unification = copy.deepcopy(query)
     datum_copy = copy.deepcopy(datum)
@@ -221,7 +233,45 @@ def apply(rule, goals, variables):
         ['bald eagle','is','hungry',False]
       ]
     '''
-    raise RuntimeError("You need to write this part!")
+    applications = []
+    goalsets = []
+    # print("rule['consequent'] = ", rule['consequent'])
+    for idx, goal in enumerate(goals):
+        # 1. Test to see whether the consequent of the rule can be unified with a goal
+        unification, subs = unify(rule['consequent'], goal, variables)
+        # print("unify the goal: ", goal)
+        # print("unification =", unification, " subs = ", subs)
+
+        if unification == None and subs == None:
+            continue
+        # unify the goal:  ['bobcat', 'eats', 'squirrel', False]
+        # unification = ['bobcat', 'eats', 'squirrel', False]  subs =  {'x': 'bobcat'}
+
+        # 2. Take the variable substitutions from the rule application,
+        #    and modify the rule antecedents using those same substitutions.
+        temp_antecedents = copy.deepcopy(rule['antecedents'])
+        for temp_antecedent in temp_antecedents:
+            antecedent_index = 0
+            while(antecedent_index < len(temp_antecedent)):
+                substitue = get_recursive_value(subs, temp_antecedent[antecedent_index])
+                if substitue is not None:
+                    temp_antecedent[antecedent_index] = substitue
+                antecedent_index += 1
+
+        applications.append({
+            'antecedents': temp_antecedents,
+            'consequent': unification
+        })
+
+        # 3. Replace the old goal with the new goals
+        # the goal that unified with
+        # applications[i]['consequent'] has been removed, and replaced by
+        # the members of applications[i]['antecedents']
+        temp_goals = copy.deepcopy(goals)
+        temp_goals.pop(idx)
+        temp_goals = temp_goals + temp_antecedents
+        goalsets.append(temp_goals)
+
     return applications, goalsets
 
 def backward_chain(query, rules, variables):
