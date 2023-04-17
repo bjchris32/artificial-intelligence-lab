@@ -52,7 +52,7 @@ def compute_transition_matrix(model):
     for r in range(M):
         for c in range(N):
             # do not move at terminal
-            if model.T[r, c] is True:
+            if model.T[r, c] == True:
                 continue
             # start moving with each action
             for action_idx, action in enumerate([[0, -1], [-1, 0], [0, +1], [+1, 0]]):
@@ -106,6 +106,22 @@ def compute_transition_matrix(model):
 
     return transition_matrix
 
+def get_utility_with_action(model, current_r, current_c, P, U_current, action_idx):
+    M = model.M
+    N = model.N
+
+    # if current_r == 1 and current_c == 0 and action_idx == 2:
+    #     print("at r = 1, c = 0, action = 2, transition P is =====")
+    #     model.visualize(P[current_r, current_c, action_idx, :, :])
+    #     print("U_current ======= ")
+    #     model.visualize(U_current)
+
+    sum = 0
+    for next_r in range(M):
+        for next_c in range(N):
+            sum += P[current_r, current_c, action_idx, next_r, next_c] * U_current[next_r, next_c]
+    return sum
+
 def update_utility(model, P, U_current):
     '''
     Parameters:
@@ -116,7 +132,46 @@ def update_utility(model, P, U_current):
     Output:
     U_next - The updated utility function, which is an M x N array
     '''
-    raise RuntimeError("You need to write this part!")
+    gamma = model.gamma
+    U_next = np.zeros(shape=U_current.shape)
+
+    # iterate each loc
+        # iterate each action to get the max of (sum each s' of P(s' | s,a)*U(s'))
+        # Q: how do we get U(s')?
+    M = model.M
+    N = model.N
+    R = model.R
+    best_action = -1
+
+    for r in range(M):
+        for c in range(N):
+            # calculate U_next[r, c]
+            # terminal state do not take any action
+            if model.T[r, c] == True:
+                # print("terminal at r = ", r, ", c = ", c, " is set to be model.R[r, c] = ", model.R[r, c])
+                U_next[r, c] = model.R[r, c]
+                continue
+            # non-terminal state
+            max_utility = np.NINF
+            for action_idx in range(4):
+                temp_utility = get_utility_with_action(model, r, c, P, U_current, action_idx)
+                if temp_utility > max_utility:
+                    best_action = action_idx
+                    max_utility = temp_utility
+            U_next[r, c] = R[r, c] + gamma * max_utility
+            # print("best action at r=", r, "c = ", c, ", action = ", best_action)
+
+    return U_next
+    # raise RuntimeError("You need to write this part!")
+
+def is_converge(U_previous, U_current):
+    for r in range(len(U_current)):
+        for c in range(len(U_current[0])):
+            # check converge
+            if np.abs(U_previous[r, c] - U_current[r, c]) >= epsilon:
+                return False
+    return True
+
 
 def value_iteration(model):
     '''
@@ -126,7 +181,43 @@ def value_iteration(model):
     Output:
     U - The utility function, which is an M x N array
     '''
-    raise RuntimeError("You need to write this part!")
+    M = model.M
+    N = model.N
+    R = model.R
+
+    # initialize P and U_current
+    U_current = np.zeros(shape=(M, N))
+    # U_current = R
+    P = compute_transition_matrix(model)
+
+    # print("model.gamma == ", model.gamma)
+    # print("R === ", )
+    # model.visualize(R)
+    # print("P ==== P[1, 0, 2, :, :]")
+    # model.visualize(P[1, 0, 2, :, :])
+
+
+    # while there is any s which does not converge in U_current
+        # update all U_current to U_next
+        # update_utility(model, P, U_current)
+    num_of_iterations = 0
+    while(True):
+        # print("keep iteration ... ", num_of_iterations)
+        if num_of_iterations == 100:
+            break
+        U_previous = U_current
+        # print("previous utility =====")
+        # model.visualize(U_previous)
+        U_current = update_utility(model, P, U_previous)
+        # print("after update utility ==== ")
+        # model.visualize(U_current)
+        if is_converge(U_previous, U_current):
+            break
+        num_of_iterations += 1
+        # if num_of_iterations == 2:
+        #     break
+
+    return U_current
 
 if __name__ == "__main__":
     import utils
