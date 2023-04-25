@@ -124,6 +124,7 @@ class q_learner():
         state_idx = self.get_state_idx(state)
         return self.q[state_idx]
 
+    # Q: should I check if the actions in newstate is legal?
     def q_local(self, reward, newstate):
         '''
         The update to Q estimated from a single step of game play:
@@ -141,9 +142,13 @@ class q_learner():
         '''
         # iterate the action in the newsate
         newstate_idx = self.get_state_idx(newstate)
-        Q_local = reward + self.gamma * max(self.q[newstate_idx])
+        # print("self.q[newstate_idx] = ", self.q[newstate_idx])
+        max_of_q_next_state = max(self.q[newstate_idx])
+        # print("max_of_q_next_state = ", max_of_q_next_state)
+        Q_local = reward + self.gamma * max_of_q_next_state
         return Q_local
 
+    # Q: Just pass newstate to q_local? Or, I need to do the given action on newstate?
     def learn(self, state, action, reward, newstate):
         '''
         Update the internal Q-table on the basis of an observed
@@ -161,10 +166,15 @@ class q_learner():
         None
         '''
         state_idx = self.get_state_idx(state)
-        new_state_idx = self.get_state_idx(newstate)
+        # new_state_idx = self.get_state_idx(newstate)
         mapped_action = action + 1
         original_q = self.q[state_idx, mapped_action]
-        self.q[state_idx, mapped_action] = original_q + self.alpha * (self.q_local(reward, new_state_idx) - original_q)
+        q_local_next_state = self.q_local(reward, newstate)
+        self.q[state_idx, mapped_action] = original_q + self.alpha * (q_local_next_state - original_q)
+
+        # print("q_local_next_state = ", q_local_next_state, ", original_q = ", original_q)
+        # print("learned q with mapped_action ", mapped_action, " = ", self.q[state_idx, mapped_action])
+        # print("self.q[state_idx] = ", self.q[state_idx])
 
         return self.q[state_idx, mapped_action]
     
@@ -213,7 +223,15 @@ class q_learner():
         Q (scalar float): 
           The Q-value of the selected action
         '''
-        raise RuntimeError('You need to write this!')
+        state_idx = self.get_state_idx(state)
+        sate_q_values = self.q[state_idx]
+        max_q_idx = np.argmax(sate_q_values)
+        # print("max_q_idx = ", max_q_idx)
+        max_q = self.q[state_idx, max_q_idx]
+        out_action = max_q_idx - 1
+        # print("max_q = ", max_q)
+
+        return (out_action, max_q)
     
     def act(self, state):
         '''
@@ -234,7 +252,26 @@ class q_learner():
         0 if the paddle should be stationary
         1 if the paddle should move downward
         '''
-        raise RuntimeError('You need to write this!')
+        explorable_action = self.choose_unexplored_action(state)
+        if explorable_action is not None:
+            return explorable_action
+
+        # keep explore with prob = epsilon
+        random_action_prob = np.random.random()
+        if random_action_prob < self.epsilon:
+            # choose action uniformly at random
+            # print("choose action uniformly at random with random_action_prob = ", random_action_prob, "self.epsilon = ", self.epsilon)
+            # print("choose action uniformly at random")
+            # return self.get_random_action(state)
+            action_idx = np.random.choice(NUM_ACTIONS)
+            mapped_action = action_idx - 1
+            return mapped_action
+        else:
+            # choose action with best Q
+            # print("choose action with best Q")
+            # print("choose action with best Q")
+            max_q_action = self.exploit(state)[0]
+            return max_q_action
 
     def get_state_idx(self, state):
         return (int)(np.prod(state))
