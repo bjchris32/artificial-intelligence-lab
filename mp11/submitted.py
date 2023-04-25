@@ -42,18 +42,13 @@ class q_learner():
         '''
         # The state will be a list of 5 integers,
         # such that 0 <= state[i] < state_cardinality[i] for 0 <= i < 5.
-        self.number_of_states = (int)(np.prod(state_cardinality))
-        self.q = np.zeros(shape = (self.number_of_states, NUM_ACTIONS))
-        self.n = np.zeros(shape = (self.number_of_states, NUM_ACTIONS))
+        self.q = np.zeros(shape = (state_cardinality[0], state_cardinality[1], state_cardinality[2], state_cardinality[3], state_cardinality[4], NUM_ACTIONS))
+        self.n = np.zeros(shape = (state_cardinality[0], state_cardinality[1], state_cardinality[2], state_cardinality[3], state_cardinality[4], NUM_ACTIONS))
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
         self.nfirst = nfirst
         self.state_cardinality = state_cardinality
-
-        # print("self.number_of_states = ", self.number_of_states)
-        # print("self.q.shape = ", self.q.shape)
-
 
     def report_exploration_counts(self, state):
         '''
@@ -69,10 +64,7 @@ class q_learner():
           number of times that each action has been explored from this state.
           The mapping from actions to integers is up to you, but there must be three of them.
         '''
-        # get_state_idx = (int)(np.prod(state))
-        # print("get_state_idx = ", get_state_idx)
-        # print("method = ", self.get_state_idx(state))
-        return self.n[self.get_state_idx(state)]
+        return self.n[tuple(state)]
 
     def choose_unexplored_action(self, state):
         '''
@@ -93,17 +85,15 @@ class q_learner():
           Otherwise, choose one uniformly at random from those w/count less than n_explore.
           When you choose an action, you should increment its count in your counter table.
         '''
-        state_idx = self.get_state_idx(state)
-        # print("self.n[state_idx] = ", self.n[state_idx])
-        action_list = np.array((self.n[state_idx] < self.nfirst).nonzero()).flatten()
+        action_list = np.array((self.n[tuple(state)] < self.nfirst).nonzero()).flatten()
 
         if len(action_list) == 0:
             return None
 
-        # print("action_list = ", action_list.shape)
         # update self.n before returning the mapped action
         action_idx = np.random.choice(action_list)
-        self.n[state_idx, action_idx] += 1
+        self.n[tuple(state)][action_idx] += 1
+
         mapped_action = action_idx - 1
         return mapped_action
 
@@ -121,8 +111,7 @@ class q_learner():
           reward plus expected future utility of each of the three actions. 
           The mapping from actions to integers is up to you, but there must be three of them.
         '''
-        state_idx = self.get_state_idx(state)
-        return self.q[state_idx]
+        return self.q[tuple(state)]
 
     # Q: should I check if the actions in newstate is legal?
     def q_local(self, reward, newstate):
@@ -141,10 +130,7 @@ class q_learner():
         Q_local (scalar float): the local value of Q
         '''
         # iterate the action in the newsate
-        newstate_idx = self.get_state_idx(newstate)
-        # print("self.q[newstate_idx] = ", self.q[newstate_idx])
-        max_of_q_next_state = max(self.q[newstate_idx])
-        # print("max_of_q_next_state = ", max_of_q_next_state)
+        max_of_q_next_state = max(self.q[tuple(newstate)])
         Q_local = reward + self.gamma * max_of_q_next_state
         return Q_local
 
@@ -165,18 +151,12 @@ class q_learner():
         @return:
         None
         '''
-        state_idx = self.get_state_idx(state)
-        # new_state_idx = self.get_state_idx(newstate)
         mapped_action = action + 1
-        original_q = self.q[state_idx, mapped_action]
+        original_q = self.q[tuple(state)][mapped_action]
         q_local_next_state = self.q_local(reward, newstate)
-        self.q[state_idx, mapped_action] = original_q + self.alpha * (q_local_next_state - original_q)
+        self.q[tuple(state)][mapped_action] = original_q + self.alpha * (q_local_next_state - original_q)
 
-        # print("q_local_next_state = ", q_local_next_state, ", original_q = ", original_q)
-        # print("learned q with mapped_action ", mapped_action, " = ", self.q[state_idx, mapped_action])
-        # print("self.q[state_idx] = ", self.q[state_idx])
-
-        return self.q[state_idx, mapped_action]
+        return self.q[tuple(state)][mapped_action]
     
     def save(self, filename):
         '''
@@ -223,13 +203,10 @@ class q_learner():
         Q (scalar float): 
           The Q-value of the selected action
         '''
-        state_idx = self.get_state_idx(state)
-        sate_q_values = self.q[state_idx]
+        sate_q_values = self.q[tuple(state)]
         max_q_idx = np.argmax(sate_q_values)
-        # print("max_q_idx = ", max_q_idx)
-        max_q = self.q[state_idx, max_q_idx]
+        max_q = self.q[tuple(state)][max_q_idx]
         out_action = max_q_idx - 1
-        # print("max_q = ", max_q)
 
         return (out_action, max_q)
     
@@ -260,16 +237,11 @@ class q_learner():
         random_action_prob = np.random.random()
         if random_action_prob < self.epsilon:
             # choose action uniformly at random
-            # print("choose action uniformly at random with random_action_prob = ", random_action_prob, "self.epsilon = ", self.epsilon)
-            # print("choose action uniformly at random")
-            # return self.get_random_action(state)
             action_idx = np.random.choice(NUM_ACTIONS)
             mapped_action = action_idx - 1
             return mapped_action
         else:
             # choose action with best Q
-            # print("choose action with best Q")
-            # print("choose action with best Q")
             max_q_action = self.exploit(state)[0]
             return max_q_action
 
